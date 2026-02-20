@@ -12,7 +12,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const filterTag = slug[0] === 'all' ? "All notes" : slug[0];
     return {
         title: filterTag === "All notes" ? filterTag : `Notes by category: ${filterTag}`,
-        description: `Your notes in category : ${filterTag}`
+        description: `Your notes in category : ${filterTag}`,
+        openGraph: {
+            title: filterTag === "All notes" ? filterTag : `Notes by category: ${filterTag}`,
+            description: `Your notes in category : ${filterTag}`,
+            images: [
+                {
+                    url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+                    width: 1200,
+                    height: 630,
+                    alt: 'Yout notes page'
+                }
+            ]
+        }
     }
 }
 
