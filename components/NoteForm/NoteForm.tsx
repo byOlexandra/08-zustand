@@ -1,13 +1,25 @@
-'use client'
+"use client";
 
 import css from "./NoteForm.module.css";
 import { createNote } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CreateNoteInForm } from "@/types/note";
 import * as Yup from "yup";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const tags = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
+
+interface NoteFormValues {
+    title: string;
+    content: string;
+    tag: string;
+}
+
+const initialValues: NoteFormValues = {
+    title: "",
+    content: "",
+    tag: "Todo",
+};
 
 const noteFormSchema = Yup.object().shape({
     title: Yup.string()
@@ -19,38 +31,54 @@ const noteFormSchema = Yup.object().shape({
 });
 
 export default function NoteForm() {
+    const router = useRouter();
+
     const queryClient = useQueryClient();
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [values, setValues] = useState({
+        title: "",
+        content: "",
+        tag: "Todo",
+    });
 
     const { mutate: createMutate, isPending } = useMutation({
         mutationFn: createNote,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["notes"] });
+            setValues(initialValues);
+            setErrors({});
+        },
+    });
+
+    const handleCancel = () => {
+        router.push("/notes/filter/all");
+    };
+
+    const handleChange = (
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >,
+    ) => {
+        const { name, value } = e.target;
+        setValues((prev) => ({ ...prev, [name]: value }));
+        if (errors[name]) {
+            setErrors((prev) => ({ ...prev, [name]: "" }));
         }
-    })
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const values = {
-            title: formData.get("title") as string,
-            content: formData.get("content") as string,
-            tag: formData.get("tag") as string,
-        }
         try {
             await noteFormSchema.validate(values, { abortEarly: false });
-            setErrors({});
 
-            createMutate(values as CreateNoteInForm);
-        } catch (err) {
-            if (err instanceof Yup.ValidationError) {
-                const validationErrors: Record<string, string> = {};
-                err.inner.forEach((error) => {
-                    if (error.path) validationErrors[error.path] = error.message;
-                });
-                setErrors(validationErrors);
-            }
+            createMutate(values);
+        } catch (err: any) {
+            const validationErrors: Record<string, string> = {};
+            err.inner.forEach((error: any) => {
+                validationErrors[error.path] = error.message;
+            });
+            setErrors(validationErrors);
         }
     };
 
@@ -63,7 +91,8 @@ export default function NoteForm() {
                     type="text"
                     name="title"
                     className={css.input}
-                    placeholder="Enter title..."
+                    value={values.title}
+                    onChange={handleChange}
                 />
                 {errors.title && <span className={css.error}>{errors.title}</span>}
             </div>
@@ -75,30 +104,40 @@ export default function NoteForm() {
                     name="content"
                     rows={8}
                     className={css.textarea}
-                    placeholder="Enter content..."
+                    value={values.content}
+                    onChange={handleChange}
                 ></textarea>
                 {errors.content && <span className={css.error}>{errors.content}</span>}
             </div>
 
             <div className={css.formGroup}>
                 <label htmlFor="tag">Tag</label>
-                <select id="tag" name="tag" className={css.select} defaultValue="Todo">
-                    {tags.map(tag => (
-                        <option key={tag} value={tag}>{tag}</option>
+                <select
+                    id="tag"
+                    name="tag"
+                    className={css.select}
+                    defaultValue="Todo"
+                    onChange={handleChange}
+                    value={values.tag}
+                >
+                    {tags.map((tag) => (
+                        <option key={tag} value={tag}>
+                            {tag}
+                        </option>
                     ))}
                 </select>
                 {errors.tag && <span className={css.error}>{errors.tag}</span>}
             </div>
 
             <div className={css.actions}>
-                {/* <button type="button" className={css.cancelButton} onClick={onClose}>
-                    Cancel
-                </button> */}
                 <button
-                    type="submit"
-                    className={css.submitButton}
-                    disabled={isPending}
+                    type="button"
+                    className={css.cancelButton}
+                    onClick={handleCancel}
                 >
+                    Cancel
+                </button>
+                <button type="submit" className={css.submitButton} disabled={isPending}>
                     {isPending ? "Creating..." : "Create note"}
                 </button>
             </div>
