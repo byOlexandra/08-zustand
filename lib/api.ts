@@ -25,7 +25,7 @@ export async function fetchNotes(
             totalPages: data.totalPages || 1,
         };
     } catch (error) {
-        console.error("Помилка при завантаженні нотаток:", error);
+        console.error("Error while loading page:", error);
         throw error;
     }
 }
@@ -67,13 +67,3 @@ export async function deleteNote(id: string): Promise<Note> {
     }
 }
 
-// export async function getNotesByTag(tag?: string) {
-//     const { data } = await axios.get<FetchNotesResponse>('/notes', {
-//         params: { tag },
-//         headers: {
-//             Authorization: `Bearer ${process.env.NEXT_PUBLIC_NOTEHUB_TOKEN}`,
-//         }
-//     })
-//     console.log(data)
-//     return data
-// }
