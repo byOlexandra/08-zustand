@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import SearchBox from "@/components/SearchBox/SearchBox";
 import css from "./Notes.client.module.css";
@@ -11,16 +11,17 @@ import Modal from "@/components/Modal/Modal";
 import NoteForm from "@/components/NoteForm/NoteForm";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchNotes } from "@/lib/api";
+import Link from "next/link";
 
 interface NotesClientProps {
-    activeTag: string | undefined,
+    activeTag: string | undefined;
 }
 
 export default function NotesClient({ activeTag }: NotesClientProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const debouncedSetSearchQuery = useDebouncedCallback((value: string) => {
-        setSearchQuery(value)
+        setSearchQuery(value);
         setCurrentPage(1);
     }, 300);
     const [isOpenModal, setIsOpenModal] = useState(false);
@@ -34,10 +35,10 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
         refetchOnMount: false,
         placeholderData: keepPreviousData,
         retry: false,
-    })
+    });
 
     if (isError) {
-        throw error
+        throw error;
     }
 
     const displayNotes = data?.notes || [];
@@ -54,23 +55,18 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
                         totalPg={totalPages}
                     />
                 )}
-                <button className={css.button} onClick={openModal}>
-                    Create note +
-                </button>
+
+                <Link href="/notes/action/create">
+                    <button className={css.button}>Create note +</button>
+                </Link>
             </header>
             <Toaster />
-            {
-                displayNotes.length > 0 && (
-                    <NoteList notes={displayNotes} />
-                )
-            }
-            {
-                isOpenModal && (
-                    <Modal onClose={closeModal}>
-                        <NoteForm onClose={closeModal} />
-                    </Modal>
-                )
-            }
+            {displayNotes.length > 0 && <NoteList notes={displayNotes} />}
+            {isOpenModal && (
+                <Modal onClose={closeModal}>
+                    <NoteForm onClose={closeModal} />
+                </Modal>
+            )}
         </div>
-    )
+    );
 }
