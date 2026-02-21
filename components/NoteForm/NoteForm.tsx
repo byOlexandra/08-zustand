@@ -3,9 +3,10 @@
 import css from "./NoteForm.module.css";
 import { createNote } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as Yup from "yup";
-import { useState } from "react";
+// import * as Yup from "yup";
 import { useRouter } from "next/navigation";
+import { useNoteDraftStore } from "@/lib/store/noteStore";
+import { CreateNoteInForm } from "@/types/note";
 
 const tags = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
 
@@ -21,38 +22,32 @@ const initialValues: NoteFormValues = {
     tag: "Todo",
 };
 
-const noteFormSchema = Yup.object().shape({
-    title: Yup.string()
-        .min(3, "Minimum 3 letters")
-        .max(50, "Maximum 50 letters")
-        .required("Title is required"),
-    content: Yup.string().max(500, "500 letters is maximum"),
-    tag: Yup.string().oneOf(tags).required("Tag is required"),
-});
+// const noteFormSchema = Yup.object().shape({
+//     title: Yup.string()
+//         .min(3, "Minimum 3 letters")
+//         .max(50, "Maximum 50 letters")
+//         .required("Title is required"),
+//     content: Yup.string().max(500, "500 letters is maximum"),
+//     tag: Yup.string().oneOf(tags).required("Tag is required"),
+// });
 
 export default function NoteForm() {
     const router = useRouter();
 
     const queryClient = useQueryClient();
 
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [values, setValues] = useState({
-        title: "",
-        content: "",
-        tag: "Todo",
-    });
+    const { draft, setDraft, clearDraft } = useNoteDraftStore();
 
     const { mutate: createMutate, isPending } = useMutation({
         mutationFn: createNote,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["notes"] });
-            setValues(initialValues);
-            setErrors({});
+            clearDraft();
         },
     });
 
     const handleCancel = () => {
-        router.push("/notes/filter/all");
+        router.back();
     };
 
     const handleChange = (
@@ -60,30 +55,20 @@ export default function NoteForm() {
             HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
         >,
     ) => {
-        const { name, value } = e.target;
-        setValues((prev) => ({ ...prev, [name]: value }));
-        if (errors[name]) {
-            setErrors((prev) => ({ ...prev, [name]: "" }));
-        }
+        setDraft({
+            ...draft,
+            [e.target.name]: e.target.value,
+        });
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        try {
-            await noteFormSchema.validate(values, { abortEarly: false });
-
-            createMutate(values);
-        } catch (err: any) {
-            const validationErrors: Record<string, string> = {};
-            err.inner.forEach((error: any) => {
-                validationErrors[error.path] = error.message;
-            });
-            setErrors(validationErrors);
-        }
+    const handleSubmit = (formData: FormData) => {
+        const values = Object.fromEntries(formData) as CreateNoteInForm;
+        createMutate(values);
+        router.back()
     };
 
     return (
-        <form className={css.form} onSubmit={handleSubmit}>
+        <form className={css.form} action={handleSubmit}>
             <div className={css.formGroup}>
                 <label htmlFor="title">Title</label>
                 <input
@@ -91,10 +76,9 @@ export default function NoteForm() {
                     type="text"
                     name="title"
                     className={css.input}
-                    value={values.title}
+                    value={draft?.title}
                     onChange={handleChange}
                 />
-                {errors.title && <span className={css.error}>{errors.title}</span>}
             </div>
 
             <div className={css.formGroup}>
@@ -104,10 +88,9 @@ export default function NoteForm() {
                     name="content"
                     rows={8}
                     className={css.textarea}
-                    value={values.content}
+                    value={draft?.content}
                     onChange={handleChange}
                 ></textarea>
-                {errors.content && <span className={css.error}>{errors.content}</span>}
             </div>
 
             <div className={css.formGroup}>
@@ -116,9 +99,8 @@ export default function NoteForm() {
                     id="tag"
                     name="tag"
                     className={css.select}
-                    defaultValue="Todo"
+                    value={draft?.tag}
                     onChange={handleChange}
-                    value={values.tag}
                 >
                     {tags.map((tag) => (
                         <option key={tag} value={tag}>
@@ -126,7 +108,6 @@ export default function NoteForm() {
                         </option>
                     ))}
                 </select>
-                {errors.tag && <span className={css.error}>{errors.tag}</span>}
             </div>
 
             <div className={css.actions}>
@@ -134,10 +115,13 @@ export default function NoteForm() {
                     type="button"
                     className={css.cancelButton}
                     onClick={handleCancel}
+                // suppressHydrationWarning
                 >
                     Cancel
                 </button>
-                <button type="submit" className={css.submitButton} disabled={isPending}>
+                <button type="submit" className={css.submitButton} disabled={isPending}
+                // suppressHydrationWarning
+                >
                     {isPending ? "Creating..." : "Create note"}
                 </button>
             </div>
