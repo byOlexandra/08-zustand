@@ -7,8 +7,6 @@ import { useDebouncedCallback } from "use-debounce";
 import Pagination from "@/components/Pagination/Pagination";
 import { Toaster } from "react-hot-toast";
 import NoteList from "@/components/NoteList/NoteList";
-import Modal from "@/components/Modal/Modal";
-import NoteForm from "@/components/NoteForm/NoteForm";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchNotes } from "@/lib/api";
 import Link from "next/link";
@@ -24,10 +22,6 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
         setSearchQuery(value);
         setCurrentPage(1);
     }, 300);
-    const [isOpenModal, setIsOpenModal] = useState(false);
-
-    const openModal = () => setIsOpenModal(true);
-    const closeModal = () => setIsOpenModal(false);
 
     const { data, error, isError } = useQuery({
         queryKey: ["notes", searchQuery, currentPage, activeTag],
@@ -62,11 +56,6 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
             </header>
             <Toaster />
             {displayNotes.length > 0 && <NoteList notes={displayNotes} />}
-            {isOpenModal && (
-                <Modal onClose={closeModal}>
-                    <NoteForm />
-                </Modal>
-            )}
         </div>
     );
 }
