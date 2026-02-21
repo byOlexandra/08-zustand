@@ -10,18 +10,6 @@ import { CreateNoteInForm } from "@/types/note";
 
 const tags = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
 
-interface NoteFormValues {
-    title: string;
-    content: string;
-    tag: string;
-}
-
-const initialValues: NoteFormValues = {
-    title: "",
-    content: "",
-    tag: "Todo",
-};
-
 // const noteFormSchema = Yup.object().shape({
 //     title: Yup.string()
 //         .min(3, "Minimum 3 letters")
@@ -43,6 +31,7 @@ export default function NoteForm() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["notes"] });
             clearDraft();
+            router.back();
         },
     });
 
@@ -64,7 +53,6 @@ export default function NoteForm() {
     const handleSubmit = (formData: FormData) => {
         const values = Object.fromEntries(formData) as CreateNoteInForm;
         createMutate(values);
-        router.back()
     };
 
     return (
@@ -119,7 +107,10 @@ export default function NoteForm() {
                 >
                     Cancel
                 </button>
-                <button type="submit" className={css.submitButton} disabled={isPending}
+                <button
+                    type="submit"
+                    className={css.submitButton}
+                    disabled={isPending}
                 // suppressHydrationWarning
                 >
                     {isPending ? "Creating..." : "Create note"}
